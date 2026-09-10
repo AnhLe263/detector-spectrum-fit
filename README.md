@@ -56,7 +56,7 @@ Edit `INPUT_FILE` near the top of the macro if your spectrum file has a differen
 
 ## What the macro does
 
-1. **Energy calibration** – fits a linear function `E(keV) = a·channel + b` to 4 known (channel, energy) calibration points. Always computed, regardless of the chosen fit axis.
+1. **Energy calibration** – fits a linear function `E(keV) = a·channel + b` to several known (channel, energy) calibration points. Always computed, regardless of the chosen fit axis.
 2. **Read the spectrum** – loads the input file into a `TH1F`.
 3. **Background estimation** (`FitBackgroundSides`) – fits a linear (`pol1`) or exponential (`expo`) background using *only* two user-defined peak-free "side windows", so the peaks cannot bias the background estimate.
 4. **Multi-peak fit** (`FitGaussPeaks`) – fits the sum of `N_PEAKS` Gaussians plus the (now-fixed) background in a single combined fit. Each peak's initial amplitude guess is estimated locally (histogram maximum near that peak, minus the background level there) rather than from the global spectrum maximum.

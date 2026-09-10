@@ -35,10 +35,9 @@ TF1* calibFunc = nullptr; // Global variable to hold the calibration function
 
 enum class ParamType { kAmp = 0, kMean = 1, kSigma = 2 }; // for fixed peaks
 struct FixedParam {
-    int       peakIndex;   // 1-based peak number (1 = first peak, 2 = second, ...)
-    ParamType param;       // which parameter of that peak to fix
-    double    value;       // the value to fix it at, IN THE SAME UNIT AS fitMode
-                            // (channel if AxisMode::kChannel, keV if AxisMode::kEnergy)
+    int peakIndex;      // 1-based peak number (1 = first peak, 2 = second, ...)
+    ParamType param;    // which parameter of that peak to fix
+    double    value;    // the value to fix it at.
 };
 
 // AxisMode: which axis unit is used for the FIT itself.
@@ -70,7 +69,7 @@ void ComputePeakAreas(TF1* fitFunc, TFitResultPtr fitResult, int nPeaks, double 
 // ============================================================================
 //  Main macro
 //    displayOnly : true  -> only read and plot the spectrum, skip the fit
-//    fitMode     : AxisMode::kChannel (default) or AxisMode::kEnergy
+//    fitMode     : AxisMode::kChannel or AxisMode::kEnergy ((default))
 // ============================================================================
 void AnalyzeDetectorSpectrum(bool displayOnly = false, AxisMode fitMode = AxisMode::kEnergy)
 {
@@ -96,8 +95,7 @@ void AnalyzeDetectorSpectrum(bool displayOnly = false, AxisMode fitMode = AxisMo
     // 1. User settings: Quan trong
     //    ALWAYS entered in CHANNEL units (easiest to eyeball from the raw
     //    spectrum) -- automatically converted to keV below if fitMode ==
-    //    AxisMode::kEnergy. FIXED_PARAMS is the one exception: its values
-    //    must already be in whichever unit fitMode uses (see comment above).
+    //    AxisMode::kEnergy.
     // ------------------------------------------------------------------
     const char* INPUT_FILE = "Histo_test.txt";  // path to the spectrum file
     std::vector<FixedParam> FIXED_PARAMS_CH; // for fixed parameters, if any.
