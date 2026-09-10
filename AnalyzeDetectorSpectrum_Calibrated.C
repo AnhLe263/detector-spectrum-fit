@@ -226,12 +226,40 @@ std::tuple<TF1*, TF1*, std::vector<TF1*>> FitGaussPeaks(TH1* h, int nPeaks,
     fitFunc->SetNpx(2000);
     fitFunc->SetLineColor(kBlack);
     fitFunc->SetLineWidth(2);
+
     // ------------------------------------------------------------
-    // 2. Set initial parameters and limits for each peak
+    // 2. Fit the background FIRST on the two peak-free side windows,
+    //    
     // ------------------------------------------------------------
+    double bkgP0, bkgP1;
+    FitBackgroundSides(h, lowWinMin, lowWinMax, highWinMin, highWinMax,
+                        useExpBkg, bkgP0, bkgP1);
+
+    fitFunc->SetParameter(bkgStart,     bkgP0);
+    fitFunc->SetParameter(bkgStart + 1, bkgP1);
+    fitFunc->FixParameter(bkgStart,     bkgP0);   // background is now FIXED
+    fitFunc->FixParameter(bkgStart + 1, bkgP1);   // not re-fitted with the peaks
+    fitFunc->SetParName(bkgStart,     "Bkg_p0 (fixed)");
+    fitFunc->SetParName(bkgStart + 1, "Bkg_p1 (fixed)");
+
+    TF1* bkgFunc = new TF1("bkgFunc", useExpBkg ? "expo(0)" : "pol1(0)", xmin, xmax);
+    bkgFunc->SetParameters(bkgP0, bkgP1);
+    bkgFunc->SetLineColor(1);
+    bkgFunc->SetLineStyle(1);
+    bkgFunc->SetLineWidth(4);
+    // ------------------------------------------------------------
+    // 3. Set initial parameters and limits for each peak
+    // ------------------------------------------------------------
+    // Retrieve the bin indices first, then get their coordinate values
+    int firstBin = h->GetXaxis()->GetFirst();
+    int lastBin  = h->GetXaxis()->GetLast();
+    double userMin = h->GetXaxis()->GetBinLowEdge(firstBin);
+    double userMax = h->GetXaxis()->GetBinUpEdge(lastBin);
     double ampGuess = h->GetMaximum();
     for (int k = 0; k < nPeaks; ++k) {
         int ip = 3 * k;
+        h->GetXaxis()->SetRangeUser(peakGuess[k] - 2 * sigmaGuess[k], peakGuess[k] + 2 * sigmaGuess[k]);
+        ampGuess = h->GetMaximum() - bkgFunc->Eval(peakGuess[k]); // subtract background at peak position
         fitFunc->SetParameter(ip,     ampGuess);
         fitFunc->SetParameter(ip + 1, peakGuess[k]);
         fitFunc->SetParameter(ip + 2, sigmaGuess[k]);
@@ -245,6 +273,7 @@ std::tuple<TF1*, TF1*, std::vector<TF1*>> FitGaussPeaks(TH1* h, int nPeaks,
         fitFunc->SetParName(ip + 1, Form("Mean_%d",  k + 1));
         fitFunc->SetParName(ip + 2, Form("Sigma_%d", k + 1));
     }
+    h->GetXaxis()->SetRangeUser(userMin, userMax);// restore the original axis range after retrieving the bin edges
     // ------------------------------------------------------------
     // Apply any user-requested fixed parameters, overriding the
     //    Chú ý: free/limited setting from step 2 above for that one parameter.
@@ -261,20 +290,7 @@ std::tuple<TF1*, TF1*, std::vector<TF1*>> FitGaussPeaks(TH1* h, int nPeaks,
         std::cout << "Fixed " << fitFunc->GetParName(idx)
                    << " = " << fp.value << std::endl;
     }
-    // ------------------------------------------------------------
-    // 3. Fit the background FIRST on the two peak-free side windows,
-    //    
-    // ------------------------------------------------------------
-    double bkgP0, bkgP1;
-    FitBackgroundSides(h, lowWinMin, lowWinMax, highWinMin, highWinMax,
-                        useExpBkg, bkgP0, bkgP1);
-
-    fitFunc->SetParameter(bkgStart,     bkgP0);
-    fitFunc->SetParameter(bkgStart + 1, bkgP1);
-    fitFunc->FixParameter(bkgStart,     bkgP0);   // background is now FIXED
-    fitFunc->FixParameter(bkgStart + 1, bkgP1);   // not re-fitted with the peaks
-    fitFunc->SetParName(bkgStart,     "Bkg_p0 (fixed)");
-    fitFunc->SetParName(bkgStart + 1, "Bkg_p1 (fixed)");
+    
 
     // ------------------------------------------------------------
     // 4. Perform the fit (only the peak parameters are free now)
@@ -305,11 +321,6 @@ std::tuple<TF1*, TF1*, std::vector<TF1*>> FitGaussPeaks(TH1* h, int nPeaks,
 	peakFuncs.push_back(peakFunc);
     }
 
-    TF1* bkgFunc = new TF1("bkgFunc", useExpBkg ? "expo(0)" : "pol1(0)", xmin, xmax);
-    bkgFunc->SetParameters(bkgP0, bkgP1);
-    bkgFunc->SetLineColor(1);
-    bkgFunc->SetLineStyle(1);
-    bkgFunc->SetLineWidth(4);
     bkgFunc->Draw("SAME");
 
     // ------------------------------------------------------------
