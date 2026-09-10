@@ -2,79 +2,94 @@
 
 ROOT macros for reading, plotting, and fitting a charged-particle detector energy spectrum. The spectrum contains 5 overlapping peaks sitting on a background; the macros fit them with a sum of Gaussians plus a linear or exponential background, and report the position, area, and uncertainty of each peak.
 
-Two variants are provided, differing only in what the histogram's X-axis represents:
-
-| File | X-axis | Use case |
-|---|---|---|
-| `AnalyzeDetectorSpectrum_Channel.C` | Raw ADC channel | Fitting is done directly on raw channels; an energy calibration is used only to *label* each fitted peak's energy (keV) in the printed output. |
-| `AnalyzeDetectorSpectrum_Calibrated.C` | Calibrated energy (keV) | The histogram itself is built with a calibrated energy axis, so fit inputs (ROI, peak guesses, sigma guesses) are given directly in keV. |
-
 ## Repository contents
 
 ```
 .
-├── AnalyzeDetectorSpectrum_Channel.C      # fit on raw ADC channel axis
-├── AnalyzeDetectorSpectrum_Calibrated.C   # fit on calibrated energy (keV) axis
+├── AnalyzeDetectorSpectrum.C              # unified macro (recommended) — pick channel or energy axis at run time
+├── AnalyzeDetectorSpectrum_Channel.C      # legacy: fit on raw ADC channel axis only
+├── AnalyzeDetectorSpectrum_Calibrated.C   # legacy: fit on calibrated energy (keV) axis only
 ├── Histo_test.txt                        # raw spectrum data (input)
 └── README.md
 ```
 
 `Histo_test.txt` is a plain text file with one integer per line: the number of counts in that ADC channel. There is no header; line 1 = channel 0, line 2 = channel 1, and so on.
 
+> **`AnalyzeDetectorSpectrum.C` is the recommended entry point.** It merges the two legacy macros: the fit axis (raw channel vs. calibrated energy) is now a run-time choice instead of two separate files, so the ROI/peak/background settings only need to be maintained in one place. The two legacy files are kept for reference but are no longer updated.
+
 ## Requirements
 
-- [ROOT](https://root.cern) 6.x (tested with the standard `TH1F`, `TF1`, `TGraphErrors`, `TFitResult` classes; no external dependencies beyond a standard ROOT installation).
+- [ROOT](https://root.cern) 6.x (standard `TH1F`, `TF1`, `TGraphErrors`, `TFitResult` classes; no external dependencies).
 
 ## Usage
 
-Run either macro directly from the ROOT prompt or the command line. ROOT automatically calls the function that matches the file name.
+ROOT automatically calls the function matching the file name.
 
 ```bash
-# Full analysis: fit background + 5 peaks, print results
-root -l AnalyzeDetectorSpectrum_Channel.C
-root -l AnalyzeDetectorSpectrum_Calibrated.C
+# Fit on the CHANNEL axis (default), full fit + area calculation
+root -l AnalyzeDetectorSpectrum.C
 
-# Display-only mode: just read and plot the spectrum, skip fitting entirely
-root -l 'AnalyzeDetectorSpectrum_Channel.C(true)'
-root -l 'AnalyzeDetectorSpectrum_Calibrated.C(true)'
+# CHANNEL axis, display only (read + plot the spectrum, skip fitting)
+root -l 'AnalyzeDetectorSpectrum.C(true)'
+
+# Fit directly on the CALIBRATED ENERGY (keV) axis
+root -l 'AnalyzeDetectorSpectrum.C(false, AxisMode::kEnergy)'
+
+# ENERGY axis, display only
+root -l 'AnalyzeDetectorSpectrum.C(true, AxisMode::kEnergy)'
 ```
 
-Both macros expect `Histo_test.txt` to be in the current working directory (or edit the `INPUT_FILE` variable near the top of the `main` function).
+Edit `INPUT_FILE` near the top of the macro if your spectrum file has a different name/path.
 
 ### Output
 
 - A canvas (`detector_spectrum.png`) with two pads:
   - **Pad 1** – the full spectrum (log Y), with the region of interest (ROI) marked by two dashed vertical lines.
   - **Pad 2** – a zoomed view of the ROI (log Y), showing the data points, the individual fitted peaks, the fitted background, and the total fit curve.
-- Fit results printed to the console: background parameters, per-peak `Amp`/`Mean`/`Sigma` with uncertainties and correlations, overall `Chi2/NDF`, and each peak's integrated area with propagated uncertainty (and its calibrated energy, when available).
+- Fit results printed to the console: background parameters, per-peak `Amp`/`Mean`/`Sigma` with uncertainties and correlations, overall `Chi2/NDF`, and each peak's integrated area with propagated uncertainty (plus a calibrated-energy column when fitting on the channel axis).
 
-## What each macro does
+### Example output
 
-1. **Energy calibration** – fits a linear function `E(keV) = a·channel + b` to 4 known (channel, energy) calibration points.
-2. **Read the spectrum** – loads `Histo_test.txt` into a `TH1F` (bin *i+1* = channel *i*; bin edges shifted by `-0.5`/`n-0.5` so bin centers align exactly with the calibrated channel energies).
-3. **Background estimation** (`FitBackgroundSides`) – fits a linear (`pol1`) or exponential (`expo`) background using *only* two user-defined peak-free "side windows", one below and one above the peak region, so the peaks themselves cannot bias the background estimate.
-4. **Multi-peak fit** (`FitGaussPeaks`) – fits the sum of `N_PEAKS` Gaussians plus the background (background parameters are fixed from step 3, only the peak parameters are free) in a single combined fit.
-5. **Peak area calculation** (`ComputePeakAreas`) – computes each Gaussian's integrated area analytically (`Area = Amp × Sigma × √(2π) / binWidth`), with the uncertainty propagated from the fit's full covariance matrix (including the Amp–Sigma correlation).
+![Detector spectrum with 5-peak Gaussian fit](demo.png)
+
+*Left: full spectrum (log scale) with the ROI marked in red. Right: zoomed ROI showing the data, the 5 individual fitted peaks, the fitted background
+
+## What the macro does
+
+1. **Energy calibration** – fits a linear function `E(keV) = a·channel + b` to 4 known (channel, energy) calibration points. Always computed, regardless of the chosen fit axis.
+2. **Read the spectrum** – loads the input file into a `TH1F`.
+3. **Background estimation** (`FitBackgroundSides`) – fits a linear (`pol1`) or exponential (`expo`) background using *only* two user-defined peak-free "side windows", so the peaks cannot bias the background estimate.
+4. **Multi-peak fit** (`FitGaussPeaks`) – fits the sum of `N_PEAKS` Gaussians plus the (now-fixed) background in a single combined fit. Each peak's initial amplitude guess is estimated locally (histogram maximum near that peak, minus the background level there) rather than from the global spectrum maximum.
+5. **Peak area calculation** (`ComputePeakAreas`) – computes each Gaussian's integrated area analytically (`Area = Amp × Sigma × √(2π) / binWidth`), with the uncertainty propagated from the fit's full covariance matrix (including the Amp–Sigma correlation). The `binWidth` division makes the area invariant to whether the fit axis is channel or keV.
+
+## Choosing the fit axis (`AxisMode`)
+
+All ROI/peak/background settings are entered **once**, in channel units (variable names ending in `_CH`), and are automatically converted when needed:
+
+```cpp
+enum class AxisMode { kChannel, kEnergy };
+```
+
+- `AxisMode::kChannel` (default) – the histogram and fit stay in raw ADC channels; `ComputePeakAreas` additionally prints each peak's calibrated energy for reference.
+- `AxisMode::kEnergy` – the histogram is built directly with a calibrated keV axis, and `ROI_MIN_CH`/`PEAK_GUESS_CH`/`SIGMA_GUESS_CH`/background windows are converted to keV before fitting (peak positions via the full calibration, widths scaled by the calibration slope only).
 
 ## Customizing a fit
 
-All fit inputs are set as plain variables near the top of the macro's main function:
-
 ```cpp
-const int    N_PEAKS     = 5;                            // number of peaks in the ROI
-const bool   USE_EXP_BKG = false;                         // false = linear bkg, true = exponential
-std::vector<double> PEAK_GUESS  = {879, 911, 940, 968, 1009};  // initial peak positions
-std::vector<double> SIGMA_GUESS = {12, 5, 6, 5, 3.5};          // initial peak widths
-const double BKG_LOW_MIN  = 820.0, BKG_LOW_MAX  = 855.0;  // peak-free window below the peaks
-const double BKG_HIGH_MIN = 1035.0, BKG_HIGH_MAX = 1060.0; // peak-free window above the peaks
+const int    N_PEAKS     = 5;                                    // number of peaks in the ROI
+const bool   USE_EXP_BKG = false;                                 // false = linear bkg, true = exponential
+std::vector<double> PEAK_GUESS_CH  = {879, 911, 940, 968, 1009};  // initial peak positions (channel)
+std::vector<double> SIGMA_GUESS_CH = {12, 5, 6, 5, 3.5};          // initial peak widths (channel)
+const double BKG_LOW_MIN_CH  = 820.0, BKG_LOW_MAX_CH  = 855.0;    // peak-free window below the peaks
+const double BKG_HIGH_MIN_CH = 1035.0, BKG_HIGH_MAX_CH = 1060.0;  // peak-free window above the peaks
 ```
 
 ### Fixing individual peak parameters
 
-Any parameter of any peak can be held fixed at a known value instead of being freely fitted, via the `FIXED_PARAMS` vector:
+Any parameter of any peak can be held fixed at a known value instead of being freely fitted, via `FIXED_PARAMS_CH` — always entered in **channel** units regardless of the chosen `AxisMode`; the macro converts each entry automatically (Mean via the full calibration, Sigma by the calibration slope only, Amp unchanged since it's a Y-axis quantity):
 
 ```cpp
-FIXED_PARAMS = {
+FIXED_PARAMS_CH = {
     { 3, ParamType::kMean,  940.0 },   // fix peak #3's position
     { 4, ParamType::kSigma, 5.0   },   // fix peak #4's width
 };
@@ -82,4 +97,11 @@ FIXED_PARAMS = {
 
 ## Notes
 
-- Peak numbering in all output is 1-based (`Peak 1` = the first entry in `PEAK_GUESS`).
+- Peak numbering in all output is 1-based (`Peak 1` = the first entry in `PEAK_GUESS_CH`).
+- The two legacy single-axis files are not guaranteed to stay in sync with `AnalyzeDetectorSpectrum.C` — prefer the unified macro for any new work.
+
+## Author
+
+**Le Tuan Anh**
+📧 letuananh.nuclphys@gmail.com
+📅 Created September 2026
