@@ -1,6 +1,6 @@
 # Detector Spectrum Analysis (ROOT)
 
-ROOT macros for reading, plotting, and fitting a charged-particle detector energy spectrum. The spectrum contains 5 overlapping peaks sitting on a background; the macros fit them with a sum of Gaussians plus a linear or exponential background, and report the position, area, and uncertainty of each peak.
+ROOT macros for reading, plotting, and fitting a charged-particle detector energy spectrum. The spectrum contains  (overlapping) peaks sitting on a background; the macros fit them with a sum of Gaussians plus a linear or exponential background, and report the position, area, and uncertainty of each peak.
 
 ## Repository contents
 
