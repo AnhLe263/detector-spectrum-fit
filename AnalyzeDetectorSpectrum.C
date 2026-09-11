@@ -156,16 +156,6 @@ void AnalyzeDetectorSpectrum(bool displayOnly = false)
     }
     hSpectrum->SetLineColor(kAzure + 2);
     hSpectrum->SetLineWidth(4);
-
-    // Clone the histogram for the zoomed pad so the two pads keep
-    // independent axis ranges.
-    TH1F* hZoom = (TH1F*)hSpectrum->Clone("hZoom");
-    hZoom->SetTitle(Form("Zoomed spectrum (ROI %.1f - %.1f);%s;Counts",
-                          ROI_MIN, ROI_MAX, axisTitle.Data()));
-    hZoom->SetLineWidth(4);
-    hZoom->SetMarkerStyle(20); hZoom->SetMarkerColor(kAzure + 2);
-    hZoom->GetXaxis()->SetRangeUser(ROI_MIN, ROI_MAX);
-    
     if (displayOnly) {
         if (fitMode == AxisMode::kChannel) {
             ROI_MIN = 0;
@@ -175,6 +165,15 @@ void AnalyzeDetectorSpectrum(bool displayOnly = false)
             ROI_MAX = hSpectrum->GetXaxis()->GetXmax();
         }
     }
+    // Clone the histogram for the zoomed pad so the two pads keep
+    // independent axis ranges.
+    TH1F* hZoom = (TH1F*)hSpectrum->Clone("hZoom");
+    hZoom->SetTitle(Form("Zoomed spectrum (ROI %.1f - %.1f);%s;Counts",
+                          ROI_MIN, ROI_MAX, axisTitle.Data()));
+    hZoom->SetLineWidth(4);
+    hZoom->SetMarkerStyle(20); hZoom->SetMarkerColor(kAzure + 2);
+    hZoom->GetXaxis()->SetRangeUser(ROI_MIN, ROI_MAX);
+    
     // ------------------------------------------------------------------
     // 4. Draw on a 2-pad canvas
     // ------------------------------------------------------------------
