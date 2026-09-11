@@ -92,7 +92,7 @@ void AnalyzeDetectorSpectrum(bool displayOnly = false)
     //    AxisMode::kEnergy.
     // ------------------------------------------------------------------
     const char* INPUT_FILE = "Histo_test.txt";  // path to the spectrum file
-    AxisMode fitMode = AxisMode::kEnergy; // choose which axis unit to fit onchrst
+    AxisMode fitMode = AxisMode::kEnergy; // choose which axis unit to fit: kChannel or kEnergy
     // Note: all the following settings are in same unit as fitMode.
     std::vector<FixedParam> FIXED_PARAMS; // for fixed parameters, if any.
     // Region of interest (ROI) to zoom in on, in CHANNEL units.
