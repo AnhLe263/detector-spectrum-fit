@@ -70,15 +70,6 @@ void ComputePeakAreas(TF1* fitFunc, TFitResultPtr fitResult, int nPeaks, double 
 void AnalyzeDetectorSpectrum(bool displayOnly = false)
 {   
     // ------------------------------------------------------------------
-    // 0. Energy calibration: channel -> keV,  E = a*ch + b
-    //    Change 4096, kE / ch to match your own calibration points.
-    //    Always computed, regardless of fitMode: used either to print the
-    //    extra Energy column (kChannel mode) or to build the energy axis
-    //    and convert all fit settings (kEnergy mode).
-    // ------------------------------------------------------------------
-    
-
-    // ------------------------------------------------------------------
     // 1. User settings (Quan trọng): 
     // ------------------------------------------------------------------
    
