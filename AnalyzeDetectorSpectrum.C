@@ -75,7 +75,7 @@ void AnalyzeDetectorSpectrum(bool displayOnly = false)
    
     //    Energy calibration: channel -> keV,  E = a*ch + b ; Change 4096, kE / ch to match your own calibration points.
     
-    calibFunc = new TF1("fEcal0", "[0]*x+[1]", 0, 4096);
+    calibFunc = new TF1("fEcal", "[0]*x+[1]", 0, 4096);
     double kE[4]  = {0, 3157, 5156.59, 5485};       // known energies (keV)
     double ch[4] = {80.50, 1008, 1592.2, 1691};    // corresponding channels
     TGraph *grCal = new TGraph(4, ch, kE);
