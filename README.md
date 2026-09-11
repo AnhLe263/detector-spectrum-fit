@@ -84,10 +84,10 @@ double ch0[4] = {80.50, 1008, 1592.2, 1691};    // change corresponding channels
 const char* INPUT_FILE = "Histo_test.txt";                        // Change INPUT spectrum file
 const int    N_PEAKS     = 5;                                    // number of peaks in the ROI
 const bool   USE_EXP_BKG = false;                             // false = linear bkg, true = exponential
-std::vector<double> PEAK_GUESS_CH  = {879, 911, 940, 968, 1009};  // initial peak positions (channel)
-std::vector<double> SIGMA_GUESS_CH = {12, 5, 6, 5, 3.5};          // initial peak widths (channel)
-const double BKG_LOW_MIN_CH  = 820.0, BKG_LOW_MAX_CH  = 855.0;    // peak-free window below the peaks
-const double BKG_HIGH_MIN_CH = 1035.0, BKG_HIGH_MAX_CH = 1060.0;  // peak-free window above the peaks
+std::vector<double> PEAK_GUESS  = {879, 911, 940, 968, 1009};  // initial peak positions (channel)
+std::vector<double> SIGMA_GUESS = {12, 5, 6, 5, 3.5};          // initial peak widths (channel)
+const double BKG_LOW_MIN  = 820.0, BKG_LOW_MAX  = 855.0;    // peak-free window below the peaks
+const double BKG_HIGH_MIN = 1035.0, BKG_HIGH_MAX = 1060.0;  // peak-free window above the peaks
 // only in AnalyzeDetectorSpectrum.C : 
 AxisMode fitMode = AxisMode::kEnergy;                             // Change Axis mode 
 ```
@@ -105,7 +105,7 @@ FIXED_PARAMS_CH = {
 
 ## Notes
 
-- Peak numbering in all output is 1-based (`Peak 1` = the first entry in `PEAK_GUESS_CH`).
+- Peak numbering in all output is 1-based (`Peak 1` = the first entry in `PEAK_GUESS`).
 - The two legacy single-axis files are not guaranteed to stay in sync with `AnalyzeDetectorSpectrum.C` — prefer the unified macro for any new work.
 
 
