@@ -77,9 +77,9 @@ enum class AxisMode { kChannel, kEnergy }; // Only in AnalyzeDetectorSpectrum.C
 
 ```cpp
 // for Calibration if needed
-calibFunc = new TF1("fEcal0", "[0]*x+[1]", 0, 4096);            // Change number of bins if needed
-double E0[4]  = {0, 3157, 5156.59, 5485};       // change known energies (keV) if needed
-double ch0[4] = {80.50, 1008, 1592.2, 1691};    // change corresponding channels if needed
+calibFunc = new TF1("fEcal", "[0]*x+[1]", 0, 4096);            // Change number of bins if needed
+double kE[4]  = {0, 3157, 5156.59, 5485};       // change known energies (keV) if needed
+double ch[4] = {80.50, 1008, 1592.2, 1691};    // change corresponding channels if needed
 // Other:
 const char* INPUT_FILE = "Histo_test.txt";                        // Change INPUT spectrum file
 const int    N_PEAKS     = 5;                                    // number of peaks in the ROI
