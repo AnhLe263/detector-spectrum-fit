@@ -56,7 +56,7 @@ std::tuple<TF1*, TF1*, std::vector<TF1*>, TFitResultPtr> FitGaussPeaks(TH1* h, i
                     const std::vector<double>& sigmaGuess,
                     bool useExpBkg,
                     double lowWinMin, double lowWinMax,
-                    double highWinMin, double highWinMax, const std::vector<FixedParam>& fixedParams = {});
+                    double highWinMin, double highWinMax, const std::vector<FixedParam>& fixedParams = {},bool useStepBkg = false);
 
 void ComputePeakAreas(TF1* fitFunc, TFitResultPtr fitResult, int nPeaks, double binW,
                        bool showEnergyColumn = true);
@@ -101,6 +101,7 @@ void AnalyzeDetectorSpectrum(bool displayOnly = false)
     // --- Peak-fitting settings for the ROI (channel units) ---
     const int    N_PEAKS     = 5;
     const bool   USE_EXP_BKG = false; //Dùng Bkg exp thì bật true
+    const bool   USE_STEP_BKG = true; // bật step function dưới mỗi đỉnh nếu muốn
     std::vector<double> PEAK_GUESS  = {2720.52, 2830, 2928.43, 3023.86, 3163.60};
     std::vector<double> SIGMA_GUESS = {40.90, 17.04, 20.45, 17.04, 11.93};
     // Peak-free side windows used to estimate the background
@@ -218,6 +219,7 @@ void AnalyzeDetectorSpectrum(bool displayOnly = false)
                                BKG_LOW_MIN, BKG_LOW_MAX,
                                BKG_HIGH_MIN, BKG_HIGH_MAX
                                ,FIXED_PARAMS
+                               ,USE_STEP_BKG
                             );
         auto totalFit         = std::get<0>(fitFuncs);
         auto retrievedBkgFunc  = std::get<1>(fitFuncs);
@@ -313,7 +315,7 @@ std::tuple<TF1*, TF1*, std::vector<TF1*>, TFitResultPtr> FitGaussPeaks(TH1* h, i
                     const std::vector<double>& sigmaGuess,
                     bool useExpBkg,
                     double lowWinMin, double lowWinMax,
-                    double highWinMin, double highWinMax, const std::vector<FixedParam>& fixedParams)
+                    double highWinMin, double highWinMax, const std::vector<FixedParam>& fixedParams = {}, bool useStepBkg = false)
 {
     if ((int)peakGuess.size() != nPeaks || (int)sigmaGuess.size() != nPeaks) {
         std::cerr << "ERROR: peakGuess/sigmaGuess size must match nPeaks" << std::endl;
@@ -329,8 +331,20 @@ std::tuple<TF1*, TF1*, std::vector<TF1*>, TFitResultPtr> FitGaussPeaks(TH1* h, i
         formula += Form("gaus(%d)", 3 * k);
     }
     int bkgStart = 3 * nPeaks; // 3: 3 thông số của Gauss
+    int stepStart = bkgStart + 2; // step amplitudes start right after the 2 bkg params
     formula += useExpBkg ? Form("+expo(%d)", bkgStart)
                           : Form("+pol1(%d)", bkgStart);
+
+    if (useStepBkg) {
+        // one step per peak, reusing that peak's own Mean/Sigma (par[3k+1],
+        // par[3k+2]) so the step is always centered exactly at that peak, with
+        // the same width -- only the step's own amplitude ([stepStart+k]) is a
+        // new free parameter.
+        for (int k = 0; k < nPeaks; ++k) {
+            formula += Form("+[%d]*0.5*(1-TMath::Erf((x-[%d])/(1.4142135624*[%d])))",
+                             stepStart + k, 3 * k + 1, 3 * k + 2);
+        }
+    }
 
     TF1* fitFunc = new TF1("fitFunc", formula, xmin, xmax);
     fitFunc->SetNpx(2000);
@@ -381,6 +395,14 @@ std::tuple<TF1*, TF1*, std::vector<TF1*>, TFitResultPtr> FitGaussPeaks(TH1* h, i
         fitFunc->SetParName(ip,     Form("Amp_%d",   k + 1));
         fitFunc->SetParName(ip + 1, Form("Mean_%d",  k + 1));
         fitFunc->SetParName(ip + 2, Form("Sigma_%d", k + 1));
+
+        if (useStepBkg) {
+            int stepIdx = stepStart + k;
+            double stepGuess = 0.05 * ampGuess;   // step is typically a few % of the peak height; tạm để 5%
+            fitFunc->SetParameter(stepIdx, stepGuess);
+            fitFunc->SetParLimits(stepIdx, 0.0, ampGuess);  // step cannot exceed the peak's own amplitude
+            fitFunc->SetParName(stepIdx, Form("Step_%d", k + 1));
+        }
     }
     h->GetXaxis()->SetRangeUser(userMin, userMax);// restore the original axis range after retrieving the bin edges
     // ------------------------------------------------------------
@@ -410,19 +432,55 @@ std::tuple<TF1*, TF1*, std::vector<TF1*>, TFitResultPtr> FitGaussPeaks(TH1* h, i
                << " = " << fitFunc->GetChisquare() / fitFunc->GetNDF() << std::endl;
 
     // ------------------------------------------------------------
+    // -->Rebuild bkgFunc to include the fitted step amplitudes, so the
+    //     drawn/returned "background" curve reflects the true shape
+    //     (baseline + a step under each peak), not just the flat baseline.
+    // ------------------------------------------------------------
+    if (useStepBkg) {
+        TString bkgTotalFormula = useExpBkg ? "expo(0)" : "pol1(0)";
+        for (int k = 0; k < nPeaks; ++k) {
+            bkgTotalFormula += Form("+[%d]*0.5*(1-TMath::Erf((x-[%d])/(1.4142135624*[%d])))",
+                                     2 + 3 * k, 2 + 3 * k + 1, 2 + 3 * k + 2);
+        }
+        TF1* bkgFuncWithSteps = new TF1("bkgFuncWithSteps", bkgTotalFormula, xmin, xmax);
+        bkgFuncWithSteps->SetParameter(0, fitFunc->GetParameter(bkgStart));
+        bkgFuncWithSteps->SetParameter(1, fitFunc->GetParameter(bkgStart + 1));
+        for (int k = 0; k < nPeaks; ++k) {
+            bkgFuncWithSteps->SetParameter(2 + 3 * k,     fitFunc->GetParameter(stepStart + k));
+            bkgFuncWithSteps->SetParameter(2 + 3 * k + 1, fitFunc->GetParameter(3 * k + 1)); // Mean
+            bkgFuncWithSteps->SetParameter(2 + 3 * k + 2, fitFunc->GetParameter(3 * k + 2)); // Sigma
+        }
+        bkgFuncWithSteps->SetLineColor(1);
+        bkgFuncWithSteps->SetLineStyle(1);
+        bkgFuncWithSteps->SetLineWidth(4);
+        bkgFunc = bkgFuncWithSteps;   // replace the plain 2-param background for drawing/return
+    }
+
+    // ------------------------------------------------------------
     // 5. Draw each individual peak (on top of the fixed background)
     // ------------------------------------------------------------
     std::vector<TF1*> peakFuncs;
     int colors[] = {kRed + 1, kGreen + 2, kMagenta + 1, kOrange + 7, kCyan + 2, kViolet};
     for (int k = 0; k < nPeaks; ++k) {
-        TF1* peakFunc = new TF1(Form("peak_%d", k + 1),
-                                 useExpBkg ? "gaus(0)+expo(3)" : "gaus(0)+pol1(3)",
-                                 xmin, xmax);
+        // Base formula: gaus(0) uses [0]=Amp,[1]=Mean,[2]=Sigma; the
+        // background (pol1/expo) uses [3],[4]. The step term (if enabled)
+        // reuses [1]/[2] (same Mean/Sigma as the Gaussian) and only adds
+        // one new parameter [5] for the step's own amplitude.
+        TString peakFormula = useExpBkg ? "gaus(0)+expo(3)" : "gaus(0)+pol1(3)";
+        if (useStepBkg) {
+            peakFormula += "+[5]*0.5*(1-TMath::Erf((x-[1])/(1.4142135624*[2])))";
+        }
+
+        TF1* peakFunc = new TF1(Form("peak_%d", k + 1), peakFormula, xmin, xmax);
+        
         peakFunc->SetParameters(fitFunc->GetParameter(3 * k),
                                  fitFunc->GetParameter(3 * k + 1),
                                  fitFunc->GetParameter(3 * k + 2),
                                  fitFunc->GetParameter(bkgStart),
                                  fitFunc->GetParameter(bkgStart + 1));
+        if (useStepBkg) {
+            peakFunc->SetParameter(5, fitFunc->GetParameter(stepStart + k));
+        }
         peakFunc->SetLineColor(6);
         peakFunc->SetLineStyle(10);peakFunc->SetLineWidth(4);
         peakFunc->SetNpx(2000);
