@@ -1,4 +1,4 @@
-# Detector Spectrum Analysis (ROOT)
+# ROOT-based Detector Spectrum Analysis
 
 ROOT macros for reading, plotting, and fitting a charged-particle detector energy spectrum. The spectrum contains  (overlapping) peaks sitting on a background; the macros fit them with a sum of Gaussians plus a linear or exponential background, and report the position, area, and uncertainty of each peak.
 
@@ -59,19 +59,18 @@ Edit `INPUT_FILE` near the top of the macro if your spectrum file has a differen
 1. **Energy calibration** – fits a linear function `E(keV) = a·channel + b` to several known (channel, energy) calibration points. Always computed, regardless of the chosen fit axis.
 2. **Read the spectrum** – loads the input file into a `TH1F`.
 3. **Background estimation** (`FitBackgroundSides`) – fits a linear (`pol1`) or exponential (`expo`) background using *only* two user-defined peak-free "side windows", so the peaks cannot bias the background estimate.
-4. **Multi-peak fit** (`FitGaussPeaks`) – fits the sum of `N_PEAKS` Gaussians plus the (now-fixed) background in a single combined fit. Each peak's initial amplitude guess is estimated locally (histogram maximum near that peak, minus the background level there) rather than from the global spectrum maximum.
+4. **Multi-peak fit** (`FitGaussPeaks`) – fits the sum of `N_PEAKS` Gaussians plus the  background in a single combined fit.
 5. **Peak area calculation** (`ComputePeakAreas`) – computes each Gaussian's integrated area analytically (`Area = Amp × Sigma × √(2π) / binWidth`), with the uncertainty propagated from the fit's full covariance matrix (including the Amp–Sigma correlation). The `binWidth` division makes the area invariant to whether the fit axis is channel or keV.
 
 ## Choosing the fit axis (`AxisMode`)
 
-All ROI/peak/background settings are entered **once**, in channel units (variable names ending in `_CH`), and are automatically converted when needed:
 
 ```cpp
 enum class AxisMode { kChannel, kEnergy }; // Only in AnalyzeDetectorSpectrum.C
 ```
 
-- `AxisMode::kChannel` – the histogram and fit stay in raw ADC channels; `ComputePeakAreas` additionally prints each peak's calibrated energy for reference.
-- `AxisMode::kEnergy` (default) – the histogram is built directly with a calibrated keV axis, and `ROI_MIN_CH`/`PEAK_GUESS_CH`/`SIGMA_GUESS_CH`/background windows are converted to keV before fitting (peak positions via the full calibration, widths scaled by the calibration slope only).
+- `AxisMode::kChannel` – the histogram and fit stay in raw ADC channels; `ComputePeakAreas` additionally prints each peak's calibrated energy for reference. And the initial values of `ROI_MIN_CH`/`PEAK_GUESS_CH`/`SIGMA_GUESS_CH`/background windows are put in term of ADC channels.
+- `AxisMode::kEnergy` (default) – the histogram is built directly with a calibrated keV axis, and `ROI_MIN_CH`/`PEAK_GUESS_CH`/`SIGMA_GUESS_CH`/background windows are put in term of energy before fitting.
 
 ## Customizing a fit
 
@@ -84,8 +83,8 @@ double ch[4] = {80.50, 1008, 1592.2, 1691};    // change corresponding channels 
 const char* INPUT_FILE = "Histo_test.txt";                        // Change INPUT spectrum file
 const int    N_PEAKS     = 5;                                    // number of peaks in the ROI
 const bool   USE_EXP_BKG = false;                             // false = linear bkg, true = exponential
-std::vector<double> PEAK_GUESS  = {879, 911, 940, 968, 1009};  // initial peak positions (channel)
-std::vector<double> SIGMA_GUESS = {12, 5, 6, 5, 3.5};          // initial peak widths (channel)
+std::vector<double> PEAK_GUESS  = {879, 911, 940, 968, 1009};  // initial peak positions 
+std::vector<double> SIGMA_GUESS = {12, 5, 6, 5, 3.5};          // initial peak widths 
 const double BKG_LOW_MIN  = 820.0, BKG_LOW_MAX  = 855.0;    // peak-free window below the peaks
 const double BKG_HIGH_MIN = 1035.0, BKG_HIGH_MAX = 1060.0;  // peak-free window above the peaks
 // only in AnalyzeDetectorSpectrum.C : 
@@ -108,4 +107,10 @@ FIXED_PARAMS = {
 - Peak numbering in all output is 1-based (`Peak 1` = the first entry in `PEAK_GUESS`).
 - The two legacy single-axis files are not guaranteed to stay in sync with `AnalyzeDetectorSpectrum.C` — prefer the unified macro for any new work.
 
+## Citation
 
+If this code is useful for your work, please consider citing or linking back to this repository::
+
+```
+Le Tuan Anh, "ROOT-based Detector Spectrum Analysis", https://github.com/AnhLe263/detector-spectrum-fit.git
+```
