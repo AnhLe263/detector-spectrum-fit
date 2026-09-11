@@ -4,11 +4,7 @@
 //  Usage   : 1) root -l AnalyzeDetectorSpectrum.C
 //               -> fit on the Energy axis (default), full fit + area calc
 //            2) root -l 'AnalyzeDetectorSpectrum.C(true)'
-//               -> CHANNEL axis, display only (no fit)
-//            3) root -l 'AnalyzeDetectorSpectrum.C(false, AxisMode::kEnergy)'
-//               -> fit directly on the CALIBRATED ENERGY (keV) axis
-//            4) root -l 'AnalyzeDetectorSpectrum.C(true, AxisMode::kEnergy)'
-//               -> ENERGY axis, display only (no fit)
+//               -> display only (no fit)
 //  Author  : Le Tuan Anh
 //  Date    : 11/09/2026
 // ============================================================================
@@ -71,8 +67,8 @@ void ComputePeakAreas(TF1* fitFunc, TFitResultPtr fitResult, int nPeaks, double 
 //    displayOnly : true  -> only read and plot the spectrum, skip the fit
 //    fitMode     : AxisMode::kChannel or AxisMode::kEnergy ((default))
 // ============================================================================
-void AnalyzeDetectorSpectrum(bool displayOnly = false, AxisMode fitMode = AxisMode::kEnergy)
-{
+void AnalyzeDetectorSpectrum(bool displayOnly = false)
+{   
     // ------------------------------------------------------------------
     // 0. Energy calibration: channel -> keV,  E = a*ch + b
     //    Change 4096, E0 / ch0 to match your own calibration points.
@@ -88,8 +84,6 @@ void AnalyzeDetectorSpectrum(bool displayOnly = false, AxisMode fitMode = AxisMo
 
     std::cout << "Calibration: E(keV) = " << calibFunc->GetParameter(0)
               << " * ch + " << calibFunc->GetParameter(1) << std::endl;
-    std::cout << "Fit mode: " << (fitMode == AxisMode::kChannel ? "CHANNEL axis" : "ENERGY (keV) axis")
-              << std::endl;
 
     // ------------------------------------------------------------------
     // 1. User settings: Quan trong
@@ -98,23 +92,24 @@ void AnalyzeDetectorSpectrum(bool displayOnly = false, AxisMode fitMode = AxisMo
     //    AxisMode::kEnergy.
     // ------------------------------------------------------------------
     const char* INPUT_FILE = "Histo_test.txt";  // path to the spectrum file
-    std::vector<FixedParam> FIXED_PARAMS_CH; // for fixed parameters, if any.
-
+    AxisMode fitMode = AxisMode::kEnergy; // choose which axis unit to fit onchrst
+    // Note: all the following settings are in same unit as fitMode.
+    std::vector<FixedParam> FIXED_PARAMS; // for fixed parameters, if any.
     // Region of interest (ROI) to zoom in on, in CHANNEL units.
-    double ROI_MIN_CH = 820.0;
-    double ROI_MAX_CH = 1060.0;
+    double ROI_MIN = 2519.43;  
+    double ROI_MAX = 3337.43; 
     // --- Peak-fitting settings for the ROI (channel units) ---
     const int    N_PEAKS     = 5;
     const bool   USE_EXP_BKG = false; //Dùng Bkg exp thì bật true
-    std::vector<double> PEAK_GUESS_CH  = {879, 911, 940, 968, 1009};
-    std::vector<double> SIGMA_GUESS_CH = {12, 5, 6, 5, 3.5};
-    // Peak-free side windows used to estimate the background (channel units)
-    const double BKG_LOW_MIN_CH  = 820.0, BKG_LOW_MAX_CH  = 855.0;   // just before peak 1
-    const double BKG_HIGH_MIN_CH = 1035.0, BKG_HIGH_MAX_CH = 1060.0; // just after peak 5
+    std::vector<double> PEAK_GUESS  = {2720.52, 2830, 2928.43, 3023.86, 3163.60};
+    std::vector<double> SIGMA_GUESS = {40.90, 17.04, 20.45, 17.04, 11.93};
+    // Peak-free side windows used to estimate the background
+    const double BKG_LOW_MIN  = 2519.43, BKG_LOW_MAX  = 2638.72;   // just before peak 1
+    const double BKG_HIGH_MIN = 3252.22, BKG_HIGH_MAX = 3337.43; // just after last peak 
     // Nếu muốn cố định các thông số đỉnh, hãy điền vector FixedParam
     // (giá trị "value" phải cùng đơn vị với fitMode đang chọn!):
-    FIXED_PARAMS_CH = {
-    //    { 3, ParamType::kMean, 940 }   // fix peak #3's Mean = 940
+    FIXED_PARAMS = {
+    //   { 3, ParamType::kMean, 2929 }   // fix peak #3's Mean = 2929
     //    ,{ 4, ParamType::kSigma, 5 }   // fix peak #4's Sigma = 5
     };
 
@@ -140,45 +135,6 @@ void AnalyzeDetectorSpectrum(bool displayOnly = false, AxisMode fitMode = AxisMo
         return;
     }
     std::cout << "Read " << nChannels << " channels from " << INPUT_FILE << std::endl;
-
-    if (displayOnly) {
-        ROI_MIN_CH = 0;
-        ROI_MAX_CH = nChannels;
-    }
-
-    // ------------------------------------------------------------------
-    // ---> Convert the channel-unit settings above to the chosen fit axis.
-    // ------------------------------------------------------------------
-    double ROI_MIN, ROI_MAX, BKG_LOW_MIN, BKG_LOW_MAX, BKG_HIGH_MIN, BKG_HIGH_MAX;
-    std::vector<double> PEAK_GUESS, SIGMA_GUESS;
-    double calSlope = calibFunc->GetParameter(0);
-
-    if (fitMode == AxisMode::kChannel) {
-        ROI_MIN = ROI_MIN_CH;   ROI_MAX = ROI_MAX_CH;
-        BKG_LOW_MIN  = BKG_LOW_MIN_CH;   BKG_LOW_MAX  = BKG_LOW_MAX_CH;
-        BKG_HIGH_MIN = BKG_HIGH_MIN_CH;  BKG_HIGH_MAX = BKG_HIGH_MAX_CH;
-        PEAK_GUESS  = PEAK_GUESS_CH;
-        SIGMA_GUESS = SIGMA_GUESS_CH;
-    } else {
-        ROI_MIN = calibFunc->Eval(ROI_MIN_CH);   ROI_MAX = calibFunc->Eval(ROI_MAX_CH);
-        BKG_LOW_MIN  = calibFunc->Eval(BKG_LOW_MIN_CH);   BKG_LOW_MAX  = calibFunc->Eval(BKG_LOW_MAX_CH);
-        BKG_HIGH_MIN = calibFunc->Eval(BKG_HIGH_MIN_CH);  BKG_HIGH_MAX = calibFunc->Eval(BKG_HIGH_MAX_CH);
-        for (double ch : PEAK_GUESS_CH)  PEAK_GUESS.push_back(calibFunc->Eval(ch));
-        for (double s  : SIGMA_GUESS_CH) SIGMA_GUESS.push_back(s * calSlope); // width: scale only, no offset
-    }
-
-    std::vector<FixedParam> FIXED_PARAMS;
-    for (const auto& fp : FIXED_PARAMS_CH) {
-        FixedParam converted = fp;
-        if (fitMode == AxisMode::kEnergy) {
-            switch (fp.param) {
-                case ParamType::kMean:  converted.value = calibFunc->Eval(fp.value); break;
-                case ParamType::kSigma: converted.value = fp.value * calSlope;        break;
-                case ParamType::kAmp:   /* no conversion needed */                    break;
-            }
-        }
-        FIXED_PARAMS.push_back(converted);
-    }
 
     // ------------------------------------------------------------------
     // 3. Build the histogram -- X-axis edges/title depend on fitMode
@@ -209,7 +165,16 @@ void AnalyzeDetectorSpectrum(bool displayOnly = false, AxisMode fitMode = AxisMo
     hZoom->SetLineWidth(4);
     hZoom->SetMarkerStyle(20); hZoom->SetMarkerColor(kAzure + 2);
     hZoom->GetXaxis()->SetRangeUser(ROI_MIN, ROI_MAX);
-
+    
+    if (displayOnly) {
+        if (fitMode == AxisMode::kChannel) {
+            ROI_MIN = 0;
+            ROI_MAX = nChannels;
+        } else {
+            ROI_MIN = hSpectrum->GetXaxis()->GetXmin();
+            ROI_MAX = hSpectrum->GetXaxis()->GetXmax();
+        }
+    }
     // ------------------------------------------------------------------
     // 4. Draw on a 2-pad canvas
     // ------------------------------------------------------------------

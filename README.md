@@ -2,6 +2,12 @@
 
 ROOT macros for reading, plotting, and fitting a charged-particle detector energy spectrum. The spectrum contains  (overlapping) peaks sitting on a background; the macros fit them with a sum of Gaussians plus a linear or exponential background, and report the position, area, and uncertainty of each peak.
 
+## Author
+
+**Le Tuan Anh**
+📧 letuananh.nuclphys@gmail.com
+📅 Created September 2026
+
 ## Repository contents
 
 ```
@@ -29,14 +35,8 @@ ROOT automatically calls the function matching the file name.
 # Fit on the CHANNEL axis (default), full fit + area calculation
 root -l AnalyzeDetectorSpectrum.C
 
-# CHANNEL axis, display only (read + plot the spectrum, skip fitting)
+# Display only (read + plot the spectrum, skip fitting)
 root -l 'AnalyzeDetectorSpectrum.C(true)'
-
-# Fit directly on the CALIBRATED ENERGY (keV) axis
-root -l 'AnalyzeDetectorSpectrum.C(false, AxisMode::kEnergy)'
-
-# ENERGY axis, display only
-root -l 'AnalyzeDetectorSpectrum.C(true, AxisMode::kEnergy)'
 ```
 
 Edit `INPUT_FILE` near the top of the macro if your spectrum file has a different name/path.
@@ -67,21 +67,29 @@ Edit `INPUT_FILE` near the top of the macro if your spectrum file has a differen
 All ROI/peak/background settings are entered **once**, in channel units (variable names ending in `_CH`), and are automatically converted when needed:
 
 ```cpp
-enum class AxisMode { kChannel, kEnergy };
+enum class AxisMode { kChannel, kEnergy }; // Only in AnalyzeDetectorSpectrum.C
 ```
 
-- `AxisMode::kChannel` (default) – the histogram and fit stay in raw ADC channels; `ComputePeakAreas` additionally prints each peak's calibrated energy for reference.
-- `AxisMode::kEnergy` – the histogram is built directly with a calibrated keV axis, and `ROI_MIN_CH`/`PEAK_GUESS_CH`/`SIGMA_GUESS_CH`/background windows are converted to keV before fitting (peak positions via the full calibration, widths scaled by the calibration slope only).
+- `AxisMode::kChannel` – the histogram and fit stay in raw ADC channels; `ComputePeakAreas` additionally prints each peak's calibrated energy for reference.
+- `AxisMode::kEnergy` (default) – the histogram is built directly with a calibrated keV axis, and `ROI_MIN_CH`/`PEAK_GUESS_CH`/`SIGMA_GUESS_CH`/background windows are converted to keV before fitting (peak positions via the full calibration, widths scaled by the calibration slope only).
 
 ## Customizing a fit
 
 ```cpp
+// for Calibration if needed
+calibFunc = new TF1("fEcal0", "[0]*x+[1]", 0, 4096);            // Change number of bins if needed
+double E0[4]  = {0, 3157, 5156.59, 5485};       // change known energies (keV) if needed
+double ch0[4] = {80.50, 1008, 1592.2, 1691};    // change corresponding channels if needed
+// Other:
+const char* INPUT_FILE = "Histo_test.txt";                        // Change INPUT spectrum file
 const int    N_PEAKS     = 5;                                    // number of peaks in the ROI
-const bool   USE_EXP_BKG = false;                                 // false = linear bkg, true = exponential
+const bool   USE_EXP_BKG = false;                             // false = linear bkg, true = exponential
 std::vector<double> PEAK_GUESS_CH  = {879, 911, 940, 968, 1009};  // initial peak positions (channel)
 std::vector<double> SIGMA_GUESS_CH = {12, 5, 6, 5, 3.5};          // initial peak widths (channel)
 const double BKG_LOW_MIN_CH  = 820.0, BKG_LOW_MAX_CH  = 855.0;    // peak-free window below the peaks
 const double BKG_HIGH_MIN_CH = 1035.0, BKG_HIGH_MAX_CH = 1060.0;  // peak-free window above the peaks
+// only in AnalyzeDetectorSpectrum.C : 
+AxisMode fitMode = AxisMode::kEnergy;                             // Change Axis mode 
 ```
 
 ### Fixing individual peak parameters
@@ -100,8 +108,4 @@ FIXED_PARAMS_CH = {
 - Peak numbering in all output is 1-based (`Peak 1` = the first entry in `PEAK_GUESS_CH`).
 - The two legacy single-axis files are not guaranteed to stay in sync with `AnalyzeDetectorSpectrum.C` — prefer the unified macro for any new work.
 
-## Author
 
-**Le Tuan Anh**
-📧 letuananh.nuclphys@gmail.com
-📅 Created September 2026
