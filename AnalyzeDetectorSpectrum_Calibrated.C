@@ -57,14 +57,14 @@ void AnalyzeDetectorSpectrum_Calibrated(bool displayOnly = false)
     // 0. Energy calibration: channel -> keV,  E = a*ch + b
     // Changes values of 4096, E0 and ch0 to match the new calibration points
     // ------------------------------------------------------------------
-    TF1 *fEcal0 = new TF1("fEcal0", "[0]*x+[1]", 0, 4096);
-    double E0[4]  = {0, 3157, 5156.59, 5485};       // known energies (keV)
-    double ch0[4] = {80.50, 1008, 1592.2, 1691};    // corresponding channels
-    TGraph *grCal = new TGraph(4, ch0, E0);
-    grCal->Fit(fEcal0, "Q");   // Q = quiet, no printout
+    TF1 *fEcal = new TF1("fEcal", "[0]*x+[1]", 0, 4096);
+    double kE[4]  = {0, 3157, 5156.59, 5485};       // known energies (keV)
+    double ch[4] = {80.50, 1008, 1592.2, 1691};    // corresponding channels
+    TGraph *grCal = new TGraph(4, ch, kE);
+    grCal->Fit(fEcal, "Q");   // Q = quiet, no printout
 
-    std::cout << "Calibration: E(keV) = " << fEcal0->GetParameter(0)
-            << " * ch + " << fEcal0->GetParameter(1) << std::endl;
+    std::cout << "Calibration: E(keV) = " << fEcal->GetParameter(0)
+            << " * ch + " << fEcal->GetParameter(1) << std::endl;
     // ------------------------------------------------------------------
     // 1. User settings
     // ------------------------------------------------------------------
@@ -114,7 +114,7 @@ void AnalyzeDetectorSpectrum_Calibrated(bool displayOnly = false)
     // 3. Build the histogram 
     // ------------------------------------------------------------------
     TH1F* hSpectrum = new TH1F("hSpectrum", "Detector spectrum;Energy (keV);Counts",
-                                nChannels, fEcal0->Eval(-0.5), fEcal0->Eval(nChannels - 0.5));//-0.5 cho dich bin center: tâm bin giờ trùng khít với năng lượng calib đúng của kênh i
+                                nChannels, fEcal->Eval(-0.5), fEcal->Eval(nChannels - 0.5));//-0.5 cho dich bin center: tâm bin giờ trùng khít với năng lượng calib đúng của kênh i
     for (int i = 0; i < nChannels; ++i) {
         hSpectrum->SetBinContent(i + 1, counts[i]);
     }

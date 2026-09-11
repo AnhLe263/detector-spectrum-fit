@@ -77,9 +77,9 @@ void AnalyzeDetectorSpectrum(bool displayOnly = false)
     //    and convert all fit settings (kEnergy mode).
     // ------------------------------------------------------------------
     calibFunc = new TF1("fEcal0", "[0]*x+[1]", 0, 4096);
-    double E0[4]  = {0, 3157, 5156.59, 5485};       // known energies (keV)
-    double ch0[4] = {80.50, 1008, 1592.2, 1691};    // corresponding channels
-    TGraph *grCal = new TGraph(4, ch0, E0);
+    double kE[4]  = {0, 3157, 5156.59, 5485};       // known energies (keV)
+    double ch[4] = {80.50, 1008, 1592.2, 1691};    // corresponding channels
+    TGraph *grCal = new TGraph(4, ch, kE);
     grCal->Fit(calibFunc, "Q");   // Q = quiet, no printout
 
     std::cout << "Calibration: E(keV) = " << calibFunc->GetParameter(0)
