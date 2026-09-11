@@ -202,7 +202,7 @@ void AnalyzeDetectorSpectrum(bool displayOnly = false)
     } else {
         hZoom->Draw("HIST");
     }
-    TLegend* leg = new TLegend(0.20, 0.7, 0.58, 0.88);
+    TLegend* leg = new TLegend(0.20, 0.55, 0.68, 0.88);
     leg->SetBorderSize(0);
     leg->SetFillStyle(0);
     leg->AddEntry(hZoom,"Exp. Data","p");
@@ -224,8 +224,13 @@ void AnalyzeDetectorSpectrum(bool displayOnly = false)
         bool showEnergyColumn = (fitMode == AxisMode::kChannel);
         ComputePeakAreas(totalFit, fitResult, N_PEAKS, hZoom->GetBinWidth(1), showEnergyColumn);
 
-        //if (totalFit) leg->AddEntry(totalFit, "Total fit","l");
-        if (!peakFuncList.empty()) leg->AddEntry(peakFuncList[0], "Fitted peaks", "l");
+        if (totalFit) leg->AddEntry(totalFit, "Total fit","l");
+        if (!peakFuncList.empty()) {
+            for (size_t k = 0; k < peakFuncList.size(); ++k) {
+                double mean = totalFit->GetParameter(3 * k + 1);
+                leg->AddEntry(peakFuncList[k], Form("Peak %zu (%.1f)", k + 1, mean), "l");
+            }
+        }
         if (retrievedBkgFunc) leg->AddEntry(retrievedBkgFunc, "background","l");
     } else {
         std::cout << "\n[displayOnly = true] Skipping fit and area calculation.\n" << std::endl;
@@ -398,14 +403,18 @@ std::tuple<TF1*, TF1*, std::vector<TF1*>, TFitResultPtr> FitGaussPeaks(TH1* h, i
     // ------------------------------------------------------------
     // 4. Perform the fit (only the peak parameters are free now)
     // ------------------------------------------------------------
-    TFitResultPtr fitResult = h->Fit(fitFunc, "RSM+NO");
+    TFitResultPtr fitResult = h->Fit(fitFunc, "RSM+N");
     fitResult->Print();
     std::cout << "Chi2/NDF = " << fitFunc->GetChisquare() << " / " << fitFunc->GetNDF()
                << " = " << fitFunc->GetChisquare() / fitFunc->GetNDF() << std::endl;
-
+    //Draw Total fit 
+    fitFunc->SetLineColor(kSpring);
+    fitFunc->SetLineStyle(1);fitFunc->SetLineWidth(4);
+    fitFunc->Draw("SAME");
     // ------------------------------------------------------------
     // 5. Draw each individual peak (on top of the fixed background)
     // ------------------------------------------------------------
+    
     std::vector<TF1*> peakFuncs;
     int colors[] = {kRed + 1, kGreen + 2, kMagenta + 1, kOrange + 7, kCyan + 2, kViolet};
     for (int k = 0; k < nPeaks; ++k) {
@@ -417,7 +426,7 @@ std::tuple<TF1*, TF1*, std::vector<TF1*>, TFitResultPtr> FitGaussPeaks(TH1* h, i
                                  fitFunc->GetParameter(3 * k + 2),
                                  fitFunc->GetParameter(bkgStart),
                                  fitFunc->GetParameter(bkgStart + 1));
-        peakFunc->SetLineColor(6);
+        peakFunc->SetLineColor(colors[k % 6]);
         peakFunc->SetLineStyle(10);peakFunc->SetLineWidth(4);
         peakFunc->SetNpx(2000);
         peakFunc->Draw("SAME");
@@ -425,6 +434,7 @@ std::tuple<TF1*, TF1*, std::vector<TF1*>, TFitResultPtr> FitGaussPeaks(TH1* h, i
     }
 
     bkgFunc->Draw("SAME");
+    
 
     return std::make_tuple(fitFunc, bkgFunc, peakFuncs, fitResult);
 }
