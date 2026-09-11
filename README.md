@@ -94,10 +94,10 @@ AxisMode fitMode = AxisMode::kEnergy;                             // Change Axis
 
 ### Fixing individual peak parameters
 
-Any parameter of any peak can be held fixed at a known value instead of being freely fitted, via `FIXED_PARAMS_CH` — always entered in **channel** units regardless of the chosen `AxisMode`; the macro converts each entry automatically (Mean via the full calibration, Sigma by the calibration slope only, Amp unchanged since it's a Y-axis quantity):
+Any parameter of any peak can be held fixed at a known value instead of being freely fitted, via `FIXED_PARAMS` — always entered in **channel** units regardless of the chosen `AxisMode`; the macro converts each entry automatically (Mean via the full calibration, Sigma by the calibration slope only, Amp unchanged since it's a Y-axis quantity):
 
 ```cpp
-FIXED_PARAMS_CH = {
+FIXED_PARAMS = {
     { 3, ParamType::kMean,  940.0 },   // fix peak #3's position
     { 4, ParamType::kSigma, 5.0   },   // fix peak #4's width
 };
