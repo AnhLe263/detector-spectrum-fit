@@ -218,20 +218,35 @@ void AnalyzeDetectorSpectrum(bool displayOnly = false)
         auto peakFuncList      = std::get<2>(fitFuncs);
         auto fitResult         = std::get<3>(fitFuncs);
 
+        if (totalFit) {
+            //Draw Total fit 
+            totalFit->SetLineColor(kSpring);
+            totalFit->SetLineStyle(1);totalFit->SetLineWidth(4);
+            totalFit->Draw("SAME");
+            leg->AddEntry(totalFit, "Total fit","l");
+        }
+        if (!peakFuncList.empty()) {
+            int colors[] = {kRed + 1, kGreen + 2, kMagenta + 1, kOrange + 7, kCyan + 2, kViolet};
+            for (size_t k = 0; k < peakFuncList.size(); ++k) {
+                peakFuncList[k]->SetLineColor(colors[k % 6]);
+                peakFuncList[k]->SetLineStyle(10);
+                peakFuncList[k]->SetLineWidth(4);
+                peakFuncList[k]->SetNpx(2000);
+                peakFuncList[k]->Draw("SAME");
+                double mean = totalFit->GetParameter(3 * k + 1);
+                leg->AddEntry(peakFuncList[k], Form("Peak %zu (%.1f)", k + 1, mean), "l");
+            }
+        }
+        if (retrievedBkgFunc) {
+            retrievedBkgFunc->Draw("SAME");
+            leg->AddEntry(retrievedBkgFunc, "background","l");
+        }
+
         // Only print the extra "Energy" column when fitting on the CHANNEL
         // axis: in ENERGY mode, "Mean" is already the calibrated energy, so
         // re-applying calibFunc would be wrong (double conversion).
         bool showEnergyColumn = (fitMode == AxisMode::kChannel);
         ComputePeakAreas(totalFit, fitResult, N_PEAKS, hZoom->GetBinWidth(1), showEnergyColumn);
-
-        if (totalFit) leg->AddEntry(totalFit, "Total fit","l");
-        if (!peakFuncList.empty()) {
-            for (size_t k = 0; k < peakFuncList.size(); ++k) {
-                double mean = totalFit->GetParameter(3 * k + 1);
-                leg->AddEntry(peakFuncList[k], Form("Peak %zu (%.1f)", k + 1, mean), "l");
-            }
-        }
-        if (retrievedBkgFunc) leg->AddEntry(retrievedBkgFunc, "background","l");
     } else {
         std::cout << "\n[displayOnly = true] Skipping fit and area calculation.\n" << std::endl;
     }
@@ -407,16 +422,12 @@ std::tuple<TF1*, TF1*, std::vector<TF1*>, TFitResultPtr> FitGaussPeaks(TH1* h, i
     fitResult->Print();
     std::cout << "Chi2/NDF = " << fitFunc->GetChisquare() << " / " << fitFunc->GetNDF()
                << " = " << fitFunc->GetChisquare() / fitFunc->GetNDF() << std::endl;
-    //Draw Total fit 
-    fitFunc->SetLineColor(kSpring);
-    fitFunc->SetLineStyle(1);fitFunc->SetLineWidth(4);
-    fitFunc->Draw("SAME");
     // ------------------------------------------------------------
     // 5. Draw each individual peak (on top of the fixed background)
     // ------------------------------------------------------------
     
     std::vector<TF1*> peakFuncs;
-    int colors[] = {kRed + 1, kGreen + 2, kMagenta + 1, kOrange + 7, kCyan + 2, kViolet};
+    
     for (int k = 0; k < nPeaks; ++k) {
         TF1* peakFunc = new TF1(Form("peak_%d", k + 1),
                                  useExpBkg ? "gaus(0)+expo(3)" : "gaus(0)+pol1(3)",
@@ -426,15 +437,8 @@ std::tuple<TF1*, TF1*, std::vector<TF1*>, TFitResultPtr> FitGaussPeaks(TH1* h, i
                                  fitFunc->GetParameter(3 * k + 2),
                                  fitFunc->GetParameter(bkgStart),
                                  fitFunc->GetParameter(bkgStart + 1));
-        peakFunc->SetLineColor(colors[k % 6]);
-        peakFunc->SetLineStyle(10);peakFunc->SetLineWidth(4);
-        peakFunc->SetNpx(2000);
-        peakFunc->Draw("SAME");
         peakFuncs.push_back(peakFunc);
     }
-
-    bkgFunc->Draw("SAME");
-    
 
     return std::make_tuple(fitFunc, bkgFunc, peakFuncs, fitResult);
 }
