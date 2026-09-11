@@ -54,6 +54,10 @@ Edit `INPUT_FILE` near the top of the macro if your spectrum file has a differen
 
 *Left: full spectrum (log scale) with the ROI marked in red. Right: zoomed ROI showing the data, the 5 individual fitted peaks, the fitted background
 
+![Detector spectrum with 5-peak Gaussian fit](demo2.png)
+
+*Left: full spectrum (log scale) with the ROI marked in red. Right: zoomed ROI showing the data, the 4 individual fitted peaks, the fitted exponential background
+
 ## What the macro does
 
 1. **Energy calibration** – fits a linear function `E(keV) = a·channel + b` to several known (channel, energy) calibration points. Always computed, regardless of the chosen fit axis.
