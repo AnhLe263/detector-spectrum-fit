@@ -5,7 +5,7 @@
 //               -> fit on the Energy axis (default), full fit + area calc
 //            2) root -l 'AnalyzeDetectorSpectrum.C(true)'
 //               -> display only (no fit)
-//  Author  : Le Tuan Anh
+//  Author  : Le Tuan Anh; See more: https://github.com/AnhLe263/detector-spectrum-fit.git 
 //  Date    : 11/09/2026
 // ============================================================================
 
@@ -71,11 +71,19 @@ void AnalyzeDetectorSpectrum(bool displayOnly = false)
 {   
     // ------------------------------------------------------------------
     // 0. Energy calibration: channel -> keV,  E = a*ch + b
-    //    Change 4096, E0 / ch0 to match your own calibration points.
+    //    Change 4096, kE / ch to match your own calibration points.
     //    Always computed, regardless of fitMode: used either to print the
     //    extra Energy column (kChannel mode) or to build the energy axis
     //    and convert all fit settings (kEnergy mode).
     // ------------------------------------------------------------------
+    
+
+    // ------------------------------------------------------------------
+    // 1. User settings (Quan trọng): 
+    // ------------------------------------------------------------------
+   
+    //    Energy calibration: channel -> keV,  E = a*ch + b ; Change 4096, kE / ch to match your own calibration points.
+    
     calibFunc = new TF1("fEcal0", "[0]*x+[1]", 0, 4096);
     double kE[4]  = {0, 3157, 5156.59, 5485};       // known energies (keV)
     double ch[4] = {80.50, 1008, 1592.2, 1691};    // corresponding channels
@@ -85,17 +93,12 @@ void AnalyzeDetectorSpectrum(bool displayOnly = false)
     std::cout << "Calibration: E(keV) = " << calibFunc->GetParameter(0)
               << " * ch + " << calibFunc->GetParameter(1) << std::endl;
 
-    // ------------------------------------------------------------------
-    // 1. User settings: Quan trong
-    //    ALWAYS entered in CHANNEL units (easiest to eyeball from the raw
-    //    spectrum) -- automatically converted to keV below if fitMode ==
-    //    AxisMode::kEnergy.
-    // ------------------------------------------------------------------
+
     const char* INPUT_FILE = "Histo_test.txt";  // path to the spectrum file
     AxisMode fitMode = AxisMode::kEnergy; // choose which axis unit to fit: kChannel or kEnergy
     // Note: all the following settings are in same unit as fitMode.
     std::vector<FixedParam> FIXED_PARAMS; // for fixed parameters, if any.
-    // Region of interest (ROI) to zoom in on, in CHANNEL units.
+    // Region of interest (ROI) to zoom in.
     double ROI_MIN = 2519.43;  
     double ROI_MAX = 3337.43; 
     // --- Peak-fitting settings for the ROI (channel units) ---

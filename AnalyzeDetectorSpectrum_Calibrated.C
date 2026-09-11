@@ -4,7 +4,7 @@
 //  Usage   : 1) root -l AnalyzeDetectorSpectrum_Calibrated.C 
 //            2) root -l 'AnalyzeDetectorSpectrum_Calibrated.C(true)'
 //  The second usage will display the spectrum only, without fitting or area calculation.
-//  Author  : Le Tuan Anh
+//  Author  : Le Tuan Anh; See more: https://github.com/AnhLe263/detector-spectrum-fit.git 
 //  Date    : 9/09/2026
 // ============================================================================
 
