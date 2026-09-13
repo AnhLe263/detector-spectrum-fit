@@ -1,0 +1,33 @@
+# ============================================================================
+#  Input data for ComputeCrossSectionCM.C
+#  nuclear reaction yields, measured at several Lab angles
+# ----------------------------------------------------------------------------
+#  Column layout (whitespace, comma, or semicolon separated):
+#    Np         : total number of incident protons
+#    RunId      : Run ID
+#    Ep         : incident proton energy (MeV)
+#    Nt        : **areal density of the specific target nucleus involved in the reaction/scattering**
+  (nuclei/cm²), **not** the areal density of the whole target compound.
+#    Y<angle>   : peak yield (counts) at that Lab angle -- normally the
+#                 fitted peak Area from AnalyzeDetectorSpectrum.C
+#    dY<angle>  : uncertainty on that yield, from AnalyzeDetectorSpectrum.C's
+#                 ComputePeakAreas (propagated Amp-Sigma covariance error).
+#                 Use "x" if not available: ComputeDiffCrossSectionCM will
+#                 then fall back to Poisson statistics (1/sqrt(Y)) for that
+#                 single point only.
+#    Use "x" (or "X" or "-") for any Y or dY value that is missing / not
+#    measured / not available.
+#
+#  IMPORTANT: the angle list is read directly from the Y<angle>/dY<angle>
+#  labels on the header row below -- this header is the single source of
+#  truth for which angles are analyzed. If you add, remove, or reorder an
+#  angle's columns, you MUST rename its Y<angle>/dY<angle> labels to match,
+#  and keep every Y column immediately followed by its own dY column.
+#
+#  Lines starting with '#' are comments and are skipped entirely by
+#  ComputeCrossSectionCM.C -- add as many as you like, anywhere in the file.
+# ============================================================================
+Np		RunId	Ep	Nt	Y60	dY60	Y80	dY80	Y100	dY100	Y120	dY120	Y150	dY150
+1.95038E+14	13	3.2	1.74822E+18	x	x	399277	x	227866	x	x	x	99688	x
+1.50597E+14	14	3.2	1.53736E+18	591245	x	x	x	x	x	64245.1	x	72581.5	x
+1.82266E+14	15	3.1	1.53736E+18	606137	x	x	x	x	x	130001	x	110383	x
