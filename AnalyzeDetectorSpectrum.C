@@ -91,15 +91,15 @@ void AnalyzeDetectorSpectrum(bool displayOnly = false)
     std::vector<FixedParam> FIXED_PARAMS; // for fixed parameters, if any.
     // Region of interest (ROI) to zoom in.
     double ROI_MIN = 2519.43;  
-    double ROI_MAX = 3337.43; 
+    double ROI_MAX = 4000.00; 
     // --- Peak-fitting settings for the ROI (channel units) ---
-    const int    N_PEAKS     = 5;
+    const int    N_PEAKS     = 7;
     const bool   USE_EXP_BKG = false; //Dùng Bkg exp thì bật true
-    std::vector<double> PEAK_GUESS  = {2720.52, 2830, 2928.43, 3023.86, 3163.60};
-    std::vector<double> SIGMA_GUESS = {40.90, 17.04, 20.45, 17.04, 11.93};
+    std::vector<double> PEAK_GUESS  = {2720.52, 2830, 2928.43, 3023.86, 3163.60,3541.00, 3662}; // peak positions (channel or energy units)
+    std::vector<double> SIGMA_GUESS = {40.90, 17.04, 20.45, 17.04, 11.93,40,40};
     // Peak-free side windows used to estimate the background
     const double BKG_LOW_MIN  = 2519.43, BKG_LOW_MAX  = 2638.72;   // just before peak 1
-    const double BKG_HIGH_MIN = 3252.22, BKG_HIGH_MAX = 3337.43; // just after last peak 
+    const double BKG_HIGH_MIN = 3850.22, BKG_HIGH_MAX = 4000.00; // just after last peak 
     // Nếu muốn cố định các thông số đỉnh, hãy điền vector FixedParam
     // (giá trị "value" phải cùng đơn vị với fitMode đang chọn!):
     FIXED_PARAMS = {
