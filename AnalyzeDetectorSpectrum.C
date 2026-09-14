@@ -107,6 +107,14 @@ void AnalyzeDetectorSpectrum(bool displayOnly = false)
     //    ,{ 4, ParamType::kSigma, 5 }   // fix peak #4's Sigma = 5
     };
 
+    if ((int)PEAK_GUESS.size() != N_PEAKS || (int)SIGMA_GUESS.size() != N_PEAKS) {
+        std::cerr << "ERROR: size mismatch -- N_PEAKS = " << N_PEAKS
+                << ", but PEAK_GUESS has " << PEAK_GUESS.size() << " entries"
+                << " and SIGMA_GUESS has " << SIGMA_GUESS.size() << " entries."
+                << " All three must match." << std::endl;
+        return;
+    }
+    
     // ------------------------------------------------------------------
     // 2. Read the spectrum: one count value per line, channel = line index
     // ------------------------------------------------------------------
