@@ -59,7 +59,7 @@ Edit `INPUT_FILE` near the top of the macro if your spectrum file has a differen
 
 ![Detector spectrum with 5-peak Gaussian fit](demo.png)
 
-*Left: full spectrum (log scale) with the ROI marked in red. Right: zoomed ROI showing the data, the 5 individual fitted peaks, the fitted background.*
+*Left: full spectrum (log scale) with the ROI marked in red. Right: zoomed ROI showing the data, the 7 individual fitted peaks, the fitted background.*
 
 ![Detector spectrum with 5-peak Gaussian fit](demo2.png)
 

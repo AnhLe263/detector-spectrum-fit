@@ -7,7 +7,7 @@
 #    RunId      : Run ID
 #    Ep         : incident proton energy (MeV)
 #    Nt        : **areal density of the specific target nucleus involved in the reaction/scattering**
-  (nuclei/cm²), **not** the areal density of the whole target compound.
+#  (nuclei/cm²), **not** the areal density of the whole target compound.
 #    Y<angle>   : peak yield (counts) at that Lab angle -- normally the
 #                 fitted peak Area from AnalyzeDetectorSpectrum.C
 #    dY<angle>  : uncertainty on that yield, from AnalyzeDetectorSpectrum.C's
