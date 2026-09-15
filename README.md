@@ -91,6 +91,9 @@ double kE[4]  = {0, 3157, 5156.59, 5485};       // change known energies (keV) i
 double ch[4] = {80.50, 1008, 1592.2, 1691};    // change corresponding channels if needed
 // Other:
 const char* INPUT_FILE = "Histo_test.txt";                        // Change INPUT spectrum file
+// Region of interest (ROI) to zoom in.
+double ROI_MIN = 2519.43;  // lower ROI
+double ROI_MAX = 4000.00;  // Upper ROI
 const int    N_PEAKS     = 5;                                    // number of peaks in the ROI
 const bool   USE_EXP_BKG = false;                             // false = linear bkg, true = exponential
 std::vector<double> PEAK_GUESS  = {879, 911, 940, 968, 1009};  // initial peak positions 
