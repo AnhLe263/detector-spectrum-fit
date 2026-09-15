@@ -5,6 +5,25 @@ ROOT macros for a full analysis pipeline, from a raw charged-particle detector e
 1. **`AnalyzeDetectorSpectrum.C`** – reads, plots, and fits the raw spectrum (sum of Gaussians plus a linear/exponential background), and reports the position, area, and uncertainty of each peak.
 2. **`ComputeCrossSectionCM.C`** – takes those peak yields (one value per Lab angle, per incident energy) and converts them into dsigma/dOmega in the CM frame, writing a results table and plotting the excitation function for each angle.
 
+## Getting the code
+
+Clone the repository with Git:
+
+```bash
+git clone https://github.com/AnhLe263/detector-spectrum-fit.git
+cd detector-spectrum-fit
+```
+
+This creates a `detector-spectrum-fit/` folder containing all the macros and sample data
+files below. Since real experiments usually involve many spectra, each analyzed in its
+own working folder, copy the `.C` macros you need into your own working directory
+alongside your actual data files, rather than running them directly inside the cloned
+repo. To update to the latest version later, run `git pull` from inside that folder.
+
+Alternatively, download a ZIP snapshot from the repository's GitHub page
+(**Code → Download ZIP**) if you don't have Git installed — note that a ZIP download
+cannot later be updated with `git pull`.
+
 ## Author
 
 **Le Tuan Anh**
