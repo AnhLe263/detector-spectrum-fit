@@ -210,7 +210,7 @@ const Double_t Q_VALUE   = 0.0;        // MeV -- reaction Q-value (0 for elastic
 |---|---|
 | `SOLID_ANGLE_SR` | Different detector geometry/distance to target, or a setup where detectors don't all share the same solid angle (in that case, this constant would need to become per-angle instead of a single shared value). |
 | `DEAD_TIME` | Different DAQ electronics, count rate, or acquisition settings. |
-| `SYS_ERR_SQ` | Re-evaluate the 3 systematic error sources (target thickness, detector efficiency/solid angle, beam charge integration) for your own setup — the 5%/5%/2% values here are specific to this experiment, not universal defaults. |
+| `SYS_ERR_SQ` | Re-evaluate the 3 systematic error sources (target thickness, detector efficiency/solid angle, beam charge integration) for your own setup. |
 | `M_PROTON` | Change if the projectile is not a proton (e.g. alpha, deuteron). |
 | `M_TARGET` | Change to the target nucleus's mass for the reaction being analyzed (e.g. `18.998403` for ¹⁹F, `12.0` for ¹²C). Since `Nt` must already be the areal density of this same specific nucleus (see above), keep `M_TARGET` and `Nt` consistent with each other. |
 | `Q_VALUE` | Set to the reaction's Q-value (MeV) if analyzing an inelastic or transfer reaction instead of pure elastic scattering (`Q_VALUE = 0`). |
